@@ -6,7 +6,7 @@
 
   vars:
     # ✅ Use Windows paths mounted in WSL
-    minikube_cmd: "/mnt/c/Program Files/Minikube/minikube.exe"
+    minikube_cmd: "/mnt/c/Program\\ Files/Minikube/minikube.exe"
     docker_host: "tcp://127.0.0.1:49679"
     docker_cert_path: "/mnt/c/Users/DELL/.minikube/certs"
     kubeconfig_path: "/mnt/c/ProgramData/Jenkins/.kube/config"
