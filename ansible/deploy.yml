@@ -1,0 +1,74 @@
+---
+- name: Full Flask App Deployment on Minikube
+  hosts: local
+  connection: local
+  gather_facts: no
+
+  vars:
+    docker_host: "tcp://127.0.0.1:49679"
+    docker_cert_path: "C:\\Users\\DELL\\.minikube\\certs"
+    kubeconfig_path: "C:\\ProgramData\\Jenkins\\.kube\\config"
+
+  tasks:
+    - name: 🟢 Start Minikube if not running
+      win_shell: |
+        minikube status | findstr "Running"
+        if %ERRORLEVEL% neq 0 (
+            echo Starting Minikube...
+            minikube start
+        )
+      register: minikube_status
+      ignore_errors: yes
+
+    - name: 🧩 Set environment variables for Docker & Minikube
+      win_environment:
+        state: present
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+      loop:
+        - { name: 'DOCKER_TLS_VERIFY', value: '1' }
+        - { name: 'DOCKER_HOST', value: '{{ docker_host }}' }
+        - { name: 'DOCKER_CERT_PATH', value: '{{ docker_cert_path }}' }
+        - { name: 'MINIKUBE_ACTIVE_DOCKERD', value: 'minikube' }
+        - { name: 'KUBECONFIG', value: '{{ kubeconfig_path }}' }
+
+    - name: 🛠️ Verify Docker is connected to Minikube
+      win_shell: docker info
+      register: docker_info
+      ignore_errors: yes
+
+    - name: 📦 Build Flask App Docker image
+      win_shell: docker build -t flask-app:latest .
+      args:
+        chdir: "{{ playbook_dir }}\\.."
+
+    - name: 🚀 Apply Kubernetes Deployment
+      win_shell: kubectl apply -f k8s/deployment.yaml
+      args:
+        chdir: "{{ playbook_dir }}\\.."
+
+    - name: 🚀 Apply Kubernetes Service
+      win_shell: kubectl apply -f k8s/service.yaml
+      args:
+        chdir: "{{ playbook_dir }}\\.."
+
+    - name: 🔄 Restart Deployment (ensure latest image)
+      win_shell: kubectl rollout restart deployment flask-app-deployment
+      args:
+        chdir: "{{ playbook_dir }}\\.."
+
+    - name: 🔍 Check Pods
+      win_shell: kubectl get pods -o wide
+      register: pod_status
+
+    - name: 🌐 Check Services
+      win_shell: kubectl get svc
+      register: svc_status
+
+    - name: ✅ Display Summary
+      debug:
+        msg:
+          - "Pods Status:"
+          - "{{ pod_status.stdout }}"
+          - "Services Status:"
+          - "{{ svc_status.stdout }}"
