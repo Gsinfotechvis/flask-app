@@ -5,18 +5,20 @@
   gather_facts: no
 
   vars:
+    # ✅ Use Windows paths mounted in WSL
+    minikube_cmd: "/mnt/c/Program Files/Minikube/minikube.exe"
     docker_host: "tcp://127.0.0.1:49679"
-    docker_cert_path: "/home/{{ ansible_user }}/.minikube/certs"
-    kubeconfig_path: "/home/{{ ansible_user }}/.kube/config"
+    docker_cert_path: "/mnt/c/Users/DELL/.minikube/certs"
+    kubeconfig_path: "/mnt/c/ProgramData/Jenkins/.kube/config"
 
   tasks:
     - name: 🟢 Ensure Minikube is running
       shell: |
-        if ! minikube status | grep -q "Running"; then
+        if ! "{{ minikube_cmd }}" status | grep -q "Running"; then
           echo "Starting Minikube..."
-          minikube start --driver=docker
+          "{{ minikube_cmd }}" start --driver=docker
         else
-          echo "Minikube already running"
+          echo "✅ Minikube already running"
         fi
       args:
         executable: /bin/bash
@@ -25,8 +27,9 @@
 
     - name: 🧩 Export environment variables for Docker & Minikube
       shell: |
-        eval $(minikube docker-env)
-        export KUBECONFIG={{ kubeconfig_path }}
+        eval $("{{ minikube_cmd }}" docker-env)
+        export KUBECONFIG="{{ kubeconfig_path }}"
+        echo "✅ Environment variables set for Docker and Minikube"
       args:
         executable: /bin/bash
 
@@ -70,7 +73,7 @@
     - name: ✅ Display Summary
       debug:
         msg:
-          - "Pods Status:"
+          - "📦 Pods Status:"
           - "{{ pod_status.stdout }}"
-          - "Services Status:"
+          - "🌐 Services Status:"
           - "{{ svc_status.stdout }}"
