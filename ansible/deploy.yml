@@ -49,12 +49,6 @@
         chdir: "{{ playbook_dir }}/.."
         executable: /bin/bash
 
-    - name: 🚀 Apply Kubernetes Service
-      shell: kubectl apply -f k8s/service.yaml
-      args:
-        chdir: "{{ playbook_dir }}/.."
-        executable: /bin/bash
-
     - name: 🔄 Restart Deployment (ensure latest image)
       shell: kubectl rollout restart deployment flask-app-deployment
       args:
