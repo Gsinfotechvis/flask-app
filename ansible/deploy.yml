@@ -1,22 +1,18 @@
 ---
-- name: Full Flask App Deployment on Minikube
+- name: 🚀 Full Flask App Deployment on Minikube (WSL)
   hosts: localhost
   connection: local
   gather_facts: no
 
   vars:
-    # ✅ Use Windows paths mounted in WSL
-    minikube_cmd: "/mnt/c/Program\\ Files/Minikube/minikube.exe"
-    docker_host: "tcp://127.0.0.1:49679"
-    docker_cert_path: "/mnt/c/Users/DELL/.minikube/certs"
-    kubeconfig_path: "/mnt/c/ProgramData/Jenkins/.kube/config"
+    kubeconfig_path: "/home/gsinfo/.kube/config"
 
   tasks:
     - name: 🟢 Ensure Minikube is running
       shell: |
-        if ! "{{ minikube_cmd }}" status | grep -q "Running"; then
+        if ! minikube status | grep -q "Running"; then
           echo "Starting Minikube..."
-          "{{ minikube_cmd }}" start --driver=docker
+          minikube start --driver=docker --memory=3072mb
         else
           echo "✅ Minikube already running"
         fi
@@ -25,11 +21,11 @@
       register: minikube_status
       ignore_errors: yes
 
-    - name: 🧩 Export environment variables for Docker & Minikube
+    - name: 🧩 Set Docker & Minikube environment
       shell: |
-        eval $("{{ minikube_cmd }}" docker-env)
+        eval $(minikube docker-env)
         export KUBECONFIG="{{ kubeconfig_path }}"
-        echo "✅ Environment variables set for Docker and Minikube"
+        echo "✅ Environment set for Docker + Minikube"
       args:
         executable: /bin/bash
 
@@ -41,7 +37,9 @@
       ignore_errors: yes
 
     - name: 📦 Build Flask App Docker image
-      shell: docker build -t flask-app:latest .
+      shell: |
+        eval $(minikube docker-env)
+        docker build -t flask-app:latest .
       args:
         chdir: "{{ playbook_dir }}/.."
         executable: /bin/bash
