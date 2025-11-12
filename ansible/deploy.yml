@@ -5,7 +5,7 @@
   gather_facts: no
 
   vars:
-    kubeconfig_path: "/home/gsinfo/.kube/config"
+    kubeconfig_path: "/home/ubuntu/.kube/config"
 
   tasks:
     - name: 🟢 Ensure Minikube is running
